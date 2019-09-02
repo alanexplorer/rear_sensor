@@ -3,48 +3,36 @@
 import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Range
+cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size=10)
 
-class Rear():
-    def __init__(self):
-        # initiliaze
-        rospy.init_node('rear_sensor', anonymous=False)
+def callback(data):
+    distance = data.range
+    print(distance)
 
-        # What to do you ctrl + c    
-        rospy.on_shutdown(self.shutdown)
-        
-        self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size=10)
-     
-	# 5 HZ
-        r = rospy.Rate(5);
+    twist  = Twist()
+    twist.linear.x = 0.0
+    twist.linear.y = 0.0
+    twist.linear.z = 0.0
 
-	# create one Twist() variables for moving backwards.
-        move_cmd = Twist()
-	# let's go backwards at 0.2 m/s
-        move_cmd.linear.x = 0.2
+    twist.angular.x = 0.0
+    twist.angular.y = 0.0
+    twist.angular.z = 0.0
 
-        sub = rospy.Subscriber('/ultrasound', range_msg, callback)
+	if distance > 20:
+	    twist.linear.x = -0.25
+    elif distance < 20 AND distance > 10:
+        twist.linear.x = distance*(-1)
+    else:
+        twist.linear.x = 0.0
 
-	
-
-	#Go backwards for 2 seconds (10 x 5 HZ)
-        while not rospy.is_shutdown():
-	    rospy.loginfo("Going Straight")
-            self.cmd_vel.publish(move_cmd)
-            r.sleep()
-        
-    def callback(msg):
-	distance = msg.range
-	if distance < 20:
-	    shutdown()
-
-    def shutdown(self):
-        # stop turtlebot
-        rospy.loginfo("Stop")
-        self.cmd_vel.publish(Twist())
-        rospy.sleep(1)
- 
 if __name__ == '__main__':
     try:
-        Rear()
+        # initiliaze
+        rospy.init_node('rear_sensor', anonymous=False)
+        # What to do you ctrl + c
+        rospy.on_shutdown(self.shutdown)
+        #subcriber ultrasound
+        rospy.Subscriber('/ultrasound', range_msg, callback)
+
     except:
         rospy.loginfo("node terminated.")
